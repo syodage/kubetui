@@ -3,6 +3,7 @@ module github.com/syodage/kubeui
 go 1.17
 
 require (
+	github.com/go-delve/delve v1.6.1 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/rivo/tview v0.0.0-20210521091241-1fd4a5b7aab3
 	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea // indirect
