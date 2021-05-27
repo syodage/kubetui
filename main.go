@@ -7,15 +7,6 @@ import (
 )
 
 func main() {
-	newPrimitive := func(text string) tview.Primitive {
-		return tview.NewTextView().
-			SetTextAlign(tview.AlignCenter).
-			SetText(text)
-	}
-
-	main := newPrimitive("Main")
-	context := newPrimitive("Context")
-
 	sidebar := tview.NewList().
 		AddItem("contexts", "", 0, nil).
 		AddItem("deployment", "", 0, nil).
@@ -27,16 +18,18 @@ func main() {
 		// SetCurrentItem(0).
 		SetSelectedFocusOnly(true).
 		ShowSecondaryText(false)
-		
-	grid := tview.NewGrid().
-		SetRows(4, 0).
-		SetColumns(20, 0).
-		SetBorders(true).
-		AddItem(context, 0, 0, 1, 2, 0, 0, false).
-		AddItem(sidebar, 1, 0, 1, 1, 0, 0, false).
-		AddItem(main, 1, 1, 1, 1, 0, 0, false)
+	sidebar.Box.SetTitle("Menu").SetBorder(true)
 
-	if err := tview.NewApplication().SetRoot(grid, true).SetFocus(sidebar).Run(); err != nil {
+	context := tview.NewBox().SetBorder(true).SetTitle("Context")
+	main := tview.NewBox().SetBorder(true).SetTitle("Main")
+	flex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(context, 0, 1, false).
+		AddItem(tview.NewFlex().
+			AddItem(sidebar, 0, 1, false).
+			AddItem(main, 0, 9, false),
+			0, 3, false)
+
+	if err := tview.NewApplication().SetRoot(flex, true).SetFocus(sidebar).Run(); err != nil {
 		panic(err)
 	}
 }
