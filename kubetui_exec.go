@@ -30,3 +30,23 @@ func GetVersion() *Version {
 		Kubectl:    sout,
 	}
 }
+
+func GetCurrentNamespace() string {
+	out, err := exec.Command("kubens", "-c").Output()
+	if err != nil {
+		log.Panic(err)
+	}
+	return string(out)
+}
+
+func GetCurrentContext() string {
+	out, err := exec.Command("kubectl", "config", "current-context").Output()
+	if err != nil {
+		log.Panic(err)
+	}
+	return string(out)
+}
+
+func GetClusterName() string {
+	return "Minikube"
+}

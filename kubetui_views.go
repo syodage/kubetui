@@ -23,9 +23,9 @@ func NewContextView() (ctx *ContextView, err error) {
 	versions := GetVersion()
 
 	data := []*Kv{
-		NewKv("cluster", "Minikube"),
-		NewKv("context", "default-context"),
-		NewKv("namespace", "default"),
+		NewKv("cluster", GetClusterName()),
+		NewKv("context", GetCurrentContext()),
+		NewKv("namespace", GetCurrentNamespace()),
 		NewKv("kubernete", versions.Kubernetes),
 		NewKv("kubectl", versions.Kubectl),
 		NewKv("kubetui", "v0.0.1"),
