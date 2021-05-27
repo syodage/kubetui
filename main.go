@@ -3,6 +3,8 @@ package main
 import (
 	//	"fmt"
 
+	"log"
+
 	"github.com/rivo/tview"
 )
 
@@ -32,4 +34,5 @@ func main() {
 	if err := tview.NewApplication().SetRoot(flex, true).SetFocus(sidebar).Run(); err != nil {
 		panic(err)
 	}
+
 }
