@@ -1,8 +1,6 @@
 package main
 
 import (
-	//	"fmt"
-
 	"log"
 
 	"github.com/rivo/tview"
@@ -22,7 +20,10 @@ func main() {
 		ShowSecondaryText(false)
 	sidebar.Box.SetTitle("Menu").SetBorder(true)
 
-	context := tview.NewBox().SetBorder(true).SetTitle("Context")
+	context, err := NewContextView()
+	if err != nil {
+		log.Panic(err)
+	}
 	main := tview.NewBox().SetBorder(true).SetTitle("Main")
 	flex := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(context, 0, 1, false).
