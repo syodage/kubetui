@@ -67,13 +67,13 @@ func NewMenu(kev chan<- KEvent) *Menu {
 	menu := &Menu{
 		Box: tview.NewBox(),
 		menuItems: []*MenuItem{
-			newMenuItem("contexts", CtxMain),
-			newMenuItem("deployment", DpMain),
-			newMenuItem("namespace", NpMain),
-			newMenuItem("pods", NOOP),
-			newMenuItem("services", NOOP),
-			newMenuItem("nodes", NOOP),
-			newMenuItem("endpoints", NOOP),
+			newMenuItem("contexts", CONTEXTS),
+			newMenuItem("deployment", DEPLOYMENTS),
+			newMenuItem("namespace", NAMESPACES),
+			newMenuItem("pods", PODS),
+			newMenuItem("services", SERVICES),
+			newMenuItem("nodes", NODES),
+			newMenuItem("endpoints", ENDPOINTS),
 		},
 		events: kev,
 	}
@@ -176,21 +176,45 @@ func (m *Main) HandleStateChange(ev KEvent) {
 		update = func() {
 			updateSimple(m, "NOOOOOOP")
 		}
-	case NpMain:
+	case NAMESPACES:
 		data := executeCmd([]string{
 			"kubectl", "get", "namespaces", "-A"})
 		update = func() {
 			updateTable(m, data)
 		}
-	case CtxMain:
+	case CONTEXTS:
 		data := executeCmd([]string{
 			"kubectl", "config", "get-contexts"})
 		update = func() {
 			updateTable(m, data)
 		}
-	case DpMain:
+	case DEPLOYMENTS:
 		data := executeCmd([]string{
 			"kubectl", "get", "deploy", "-A"})
+		update = func() {
+			updateTable(m, data)
+		}
+	case PODS:
+		data := executeCmd([]string{
+			"kubectl", "get", "pods", "-A"})
+		update = func() {
+			updateTable(m, data)
+		}
+	case NODES:
+		data := executeCmd([]string{
+			"kubectl", "get", "nodes", "-A"})
+		update = func() {
+			updateTable(m, data)
+		}
+	case SERVICES:
+		data := executeCmd([]string{
+			"kubectl", "get", "services", "-A"})
+		update = func() {
+			updateTable(m, data)
+		}
+	case ENDPOINTS:
+		data := executeCmd([]string{
+			"kubectl", "get", "endpoints", "-A"})
 		update = func() {
 			updateTable(m, data)
 		}

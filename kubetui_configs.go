@@ -21,9 +21,17 @@ type State int16
 const (
 	NOOP State = iota
 	// states related to kubernete contexts
-	CtxMain
+	CONTEXTS
 	// states related to kubernete namespaces
-	NpMain
+	NAMESPACES
 	// states related to kubernete deployments
-	DpMain
+	DEPLOYMENTS
+	// pods
+	PODS
+	// nodes
+	NODES
+	// services
+	SERVICES
+	// endpoints
+	ENDPOINTS
 )
