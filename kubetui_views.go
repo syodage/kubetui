@@ -138,3 +138,16 @@ func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 }
 
 // ==========================Main View==============================================
+
+type Main struct {
+	*tview.Table
+}
+
+func NewMain() *Main {
+	m := &Main{
+		Table: tview.NewTable(),
+	}
+	m.Box.SetTitle("Main").
+		SetBorder(true)
+	return m
+}
