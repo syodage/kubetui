@@ -8,6 +8,18 @@ import (
 	"github.com/rivo/tview"
 )
 
+const KUBETUI_BANNER = `
+ _   __      ___    _____        
+| | / /     / _ \  (_   _)       
+| |/ /_   _| |_) )___| |_   _ _  
+|   <| | | |  _ </ __) | | | | | 
+| |\ \ |_| | |_) > _)| | |_| | | 
+|_| \_\___/|  __/\___)_|\___/ \_)
+           | |                   
+           |_|                   
+                           v0.0.1
+`
+
 // ==========================Context View==============================================
 type ContextView struct {
 	*tview.Table
@@ -161,7 +173,7 @@ func NewMain(app *tview.Application) *Main {
 	// set Box properties
 	m.Box.SetTitle("Main").
 		SetBorder(true)
-	m.Table.ScrollToBeginning()
+	updateTable(m, KUBETUI_BANNER)
 
 	return m
 }
