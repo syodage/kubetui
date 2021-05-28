@@ -12,12 +12,9 @@ type Version struct {
 }
 
 func GetVersion() *Version {
-	out, err := exec.Command("kubectl", "version", "--short").Output()
-	if err != nil {
-		log.Panic(err)
-	}
+	arr := []string{"kubectl", "version", "--short"}
+	sout := executeCmd(arr)
 	r := regexp.MustCompile(`.*: (.*)`)
-	sout := string(out)
 	vs := r.FindAllStringSubmatch(sout, -1)
 	if vs != nil {
 		return &Version{
@@ -32,21 +29,23 @@ func GetVersion() *Version {
 }
 
 func GetCurrentNamespace() string {
-	out, err := exec.Command("kubens", "-c").Output()
-	if err != nil {
-		log.Panic(err)
-	}
-	return string(out)
+	arr := []string{"kubens", "-c"}
+	return executeCmd(arr)
 }
 
 func GetCurrentContext() string {
-	out, err := exec.Command("kubectl", "config", "current-context").Output()
-	if err != nil {
-		log.Panic(err)
-	}
-	return string(out)
+	arr := []string{"kubectl", "config", "current-context"}
+	return executeCmd(arr)
 }
 
 func GetClusterName() string {
 	return "Minikube"
+}
+
+func executeCmd(arr []string) string {
+	out, err := exec.Command(arr[0], arr[1:]...).Output()
+	if err != nil {
+		log.Panic(err)
+	}
+	return string(out)
 }

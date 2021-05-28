@@ -70,6 +70,13 @@ alias gf='go fmt ./...'
 alias gr='go run ./'
 ```
 
+### How `Main` view get update
+
+- `NewKubertui(...)` start goroutine to listen for `KEvent`s
+- `Menu` view fire `KEvent`s when user select menuItem by pressing enter(or space).
+- When ever there is a new `KEvent`, `Kubetui` call `main.HandleStateChange(...)` with the event.
+- `main.HandleStateChange(...)` call kubernetes api as needed and update the main view with new data.
+
 ### Debug
 
 [Delve](https://github.com/go-delve/delve) is the easiest way to debug a go appliations. Far better than `fmt.Print(...)` statments.

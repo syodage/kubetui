@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -17,6 +18,7 @@ func NewContextView() (ctx *ContextView, err error) {
 	ctx = &ContextView{
 		Table: tview.NewTable(),
 	}
+
 	t := ctx.Table
 	b := ctx.Box
 	b.SetTitle("Context").
@@ -46,30 +48,34 @@ type Menu struct {
 	menuItems   []*MenuItem
 	activeIndex int
 	selectIndex int
+	events      chan<- KEvent
 }
 
 type MenuItem struct {
-	Name string
+	Name  string
+	State State
 }
 
-func newMenuItem(name string) *MenuItem {
+func newMenuItem(name string, st State) *MenuItem {
 	return &MenuItem{
-		Name: name,
+		Name:  name,
+		State: st,
 	}
 }
 
-func NewMenu() *Menu {
+func NewMenu(kev chan<- KEvent) *Menu {
 	menu := &Menu{
 		Box: tview.NewBox(),
 		menuItems: []*MenuItem{
-			newMenuItem("contexts"),
-			newMenuItem("deployment"),
-			newMenuItem("namespace"),
-			newMenuItem("pods"),
-			newMenuItem("services"),
-			newMenuItem("nodes"),
-			newMenuItem("endpoints"),
+			newMenuItem("contexts", CtxMain),
+			newMenuItem("deployment", DpMain),
+			newMenuItem("namespace", NpMain),
+			newMenuItem("pods", NOOP),
+			newMenuItem("services", NOOP),
+			newMenuItem("nodes", NOOP),
+			newMenuItem("endpoints", NOOP),
 		},
+		events: kev,
 	}
 
 	return menu
@@ -114,6 +120,8 @@ func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 
 	enter := func() {
 		m.selectIndex = m.activeIndex
+		// send an event to channel which update the Main view as require
+		m.events <- NewKEvent(m.menuItems[m.selectIndex].State)
 	}
 
 	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
@@ -128,11 +136,11 @@ func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 				moveDown()
 			case 'k':
 				moveUp()
-			// case ' ':
-			// 	moveDown()
-			}
-			case tcell.KeyEnter:
+			case ' ':
 				enter()
+			}
+		case tcell.KeyEnter:
+			enter()
 		}
 	})
 }
@@ -141,13 +149,70 @@ func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 
 type Main struct {
 	*tview.Table
+	app *tview.Application
 }
 
-func NewMain() *Main {
+func NewMain(app *tview.Application) *Main {
 	m := &Main{
 		Table: tview.NewTable(),
+		app:   app,
 	}
+
+	// set Box properties
 	m.Box.SetTitle("Main").
 		SetBorder(true)
+	m.Table.ScrollToBeginning()
+
 	return m
+}
+
+func (m *Main) HandleStateChange(ev KEvent) {
+
+	update := func() {
+		m.Table.SetCellSimple(0, 0, "Default Values")
+	}
+	switch ev.State {
+	case NOOP:
+		update = func() {
+			updateSimple(m, "NOOOOOOP")
+		}
+	case NpMain:
+		data := executeCmd([]string{
+			"kubectl", "get", "namespaces", "-A"})
+		update = func() {
+			updateTable(m, data)
+		}
+	case CtxMain:
+		data := executeCmd([]string{
+			"kubectl", "config", "get-contexts"})
+		update = func() {
+			updateTable(m, data)
+		}
+	case DpMain:
+		data := executeCmd([]string{
+			"kubectl", "get", "deploy", "-A"})
+		update = func() {
+			updateTable(m, data)
+		}
+	default:
+		update = func() {
+			m.Table.SetCellSimple(0, 0, "Not yet implemented")
+		}
+	}
+
+	m.app.QueueUpdateDraw(func() {
+		m.Table.Clear()
+		update()
+	})
+}
+
+func updateSimple(m *Main, data string) {
+	m.Table.SetCellSimple(0, 0, data)
+}
+
+func updateTable(m *Main, data string) {
+	lines := strings.Split(data, "\n")
+	for i, ln := range lines {
+		m.Table.SetCellSimple(i, 0, ln)
+	}
 }
