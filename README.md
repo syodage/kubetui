@@ -105,16 +105,33 @@ sudo dscl . append /Groups/_developer GroupMembership $(whoami)
 
 ```sh
 # start debug session, project path is optional if you are in the root
-dlv debug
-# To set break point at main function, `b` is alias for break 
-break main.main 
-# Add break point to a line number
-break main.main:20
-# Continute to the next debug point
-continue
-# Use print command to explore data
-print <variable> or <expression>
-# simply use 'r' command to restart the session
+dlv [COMMAND]
+
+# Command could be one of bellow
+debug # debug session, you can use the following commands:
+help # Prints the help message.
+run # Compile, run and attached in one step
+restart # Restarts the process, killing the current one if it is running.
+break (break <address> [-stack <n>|-goroutine|<variable name>]*) # Set a breakpoint. Example: break foo.go:13 or break main.main.
+trace # Set a tracepoint. Syntax identical to breakpoints.
+continue # Run until breakpoint or program termination.
+step # Single step through program.
+next # Step over to next source line.
+threads # Print status of all traced threads.
+thread $tid # Switch to another thread.
+goroutines # Print status of all goroutines.
+breakpoints # Print information on all active breakpoints.
+print $var # Evaluate a variable.
+info $type [regex] # Outputs information about the symbol table. An optional regex filters the list. Example info funcs unicode. Valid types are:
+args # Prints the name and value of all arguments to the current function
+funcs # Prints the name of all defined functions
+locals # Prints the name and value of all local variables in the current context
+sources # Prints the path of all source files
+vars # Prints the name and value of all package variables in the app. Any variable that is not local or arg is considered a package variables
+regs # Prints the contents of CPU registers.
+stack [ <depth> [ <goroutine id> ] ] # Prints the stacktrace of the current goroutine, up to <depth>. <depth> defaults to 10, pass a second argument to print the stacktrace of a different goroutine.
+test # Compile test bindary, start and attach
+exit # Exit the debugger.
 ```
 
 ## Resources
