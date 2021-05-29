@@ -58,7 +58,7 @@ func NewInfoView(ctx *KContext) (infoView *InfoView, err error) {
 // ==========================Menu View==============================================
 
 type MenuView struct {
-	*tview.Box
+	*tview.Table
 	menuItems   []*MenuItem
 	activeIndex int
 	selectIndex int
@@ -79,7 +79,7 @@ func newMenuItem(name string, st State) *MenuItem {
 
 func NewMenuView(ctx *KContext) *MenuView {
 	menu := &MenuView{
-		Box: tview.NewBox(),
+		Table: tview.NewTable(),
 		menuItems: []*MenuItem{
 			newMenuItem("contexts", CONTEXTS),
 			newMenuItem("deployment", DEPLOYMENTS),
@@ -91,55 +91,62 @@ func NewMenuView(ctx *KContext) *MenuView {
 		},
 		ctx: ctx,
 	}
-
+	menu.SetSelectedStyle(ctx.lineSelectionStyle)
+	menu.updateView()
 	return menu
 }
 
-func (m *MenuView) Draw(screen tcell.Screen) {
-	m.Box.DrawForSubclass(screen, m)
-	x, y, width, height := m.GetInnerRect()
-	for index, it := range m.menuItems {
-		if index >= height {
-			break
+func (m *MenuView) updateView() {
+	for row, it := range m.menuItems {
+		sel := "|"
+		if row == m.selectIndex {
+			sel = "| " // select 
 		}
 
-		sel := "|" // not active
-		if index == m.activeIndex {
-			sel = "|❯ " // active
+		if row == m.activeIndex {
+			sel = "|❯ " // active 
 		}
 
-		if index == m.selectIndex {
-			sel = "|❯❯ " // active
-		}
-		line := fmt.Sprintf(`%s[white] %s`, sel, it.Name)
-		tview.Print(screen, line, x, y+index, width, tview.AlignLeft, tcell.ColorRed)
+		resource := fmt.Sprintf(`%v %v`, sel, it.Name)
+		m.SetCellSimple(row, 0, resource)	
 	}
+
+	m.Select(m.selectIndex, 0)
+}
+
+func (m *MenuView) Focus(delegate func(p tview.Primitive)) {
+	m.Table.Focus(delegate)
+	m.SetSelectable(true, false)
+	m.ctx.LogMsg("[Menu] Focused Menu view")
 }
 
 func (m *MenuView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 
 	moveDown := func() {
-		m.activeIndex++
-		if m.activeIndex >= len(m.menuItems) {
-			m.activeIndex = 0
+		m.selectIndex++
+		if m.selectIndex >= len(m.menuItems) {
+			m.selectIndex = 0
 		}
+		m.updateView()
 		m.ctx.LogMsg("[Menu] move down")
 	}
 
 	moveUp := func() {
-		m.activeIndex--
-		if m.activeIndex < 0 {
-			m.activeIndex = len(m.menuItems) - 1
+		m.selectIndex--
+		if m.selectIndex < 0 {
+			m.selectIndex = len(m.menuItems) - 1
 		}
+		m.updateView()
 		m.ctx.LogMsg("[Menu] move up")
 	}
 
 	enter := func() {
-		m.selectIndex = m.activeIndex
+		m.activeIndex = m.selectIndex
+		m.updateView()
 		// FIXME: if order of following channel push change, UI get hang sometime
 		m.ctx.LogMsg("[Menu] press enter")
 		// send an event to channel which update the Main view as require
-		m.ctx.stateEvents <- NewKEvent(m.menuItems[m.selectIndex].State)
+		m.ctx.stateEvents <- NewKEvent(m.menuItems[m.activeIndex].State)
 	}
 
 	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
@@ -162,6 +169,7 @@ func (m *MenuView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 					kview:    MAIN_VIEW,
 					setFocus: setFocus,
 				}
+				m.SetSelectable(false, false)
 			}
 		case tcell.KeyEnter:
 			enter()
@@ -186,11 +194,7 @@ func NewMainView(ctx *KContext) *MainView {
 	m.SetTitle("Main").
 		SetBorder(true)
 	m.updateTable(KUBETUI_BANNER)
-	// selection style
-	selectionStyle := tcell.StyleDefault.
-		Foreground(tcell.ColorGreenYellow).
-		Bold(true)
-	m.SetSelectedStyle(selectionStyle)
+	m.SetSelectedStyle(ctx.lineSelectionStyle)
 	return m
 }
 
