@@ -173,7 +173,7 @@ func (m *MenuView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 
 type MainView struct {
 	*tview.Table
-	ctx *KContext
+	ctx       *KContext
 	activeRow int
 }
 
@@ -186,9 +186,11 @@ func NewMainView(ctx *KContext) *MainView {
 	m.SetTitle("Main").
 		SetBorder(true)
 	m.updateTable(KUBETUI_BANNER)
-	m.SetSelectable(true, false)
-	m.Select(m.activeRow, 0)
-	// m.SetFixed(1, 0)
+	// selection style
+	selectionStyle := tcell.StyleDefault.
+		Foreground(tcell.ColorGreenYellow).
+		Bold(true)
+	m.SetSelectedStyle(selectionStyle)
 	return m
 }
 
@@ -242,6 +244,8 @@ func (m *MainView) HandleStateChange(ev KEvent) {
 	}(cmd, update)
 
 }
+
+// Main view key-bindings
 func (m *MainView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	moveUp := func() {
 		m.activeRow--
@@ -251,18 +255,21 @@ func (m *MainView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 		m.Select(m.activeRow, 0)
 		m.ctx.LogMsg("[Main] move up")
 	}
+
 	moveDown := func() {
 		m.activeRow++
 		// TODO: why is this offset? should we strip table data?
-		if m.activeRow >= m.GetRowCount() - 1 {
+		if m.activeRow >= m.GetRowCount()-1 {
 			m.activeRow = m.GetRowCount() - 2
 		}
 		m.Select(m.activeRow, 0)
 		m.ctx.LogMsg("[Main] move down")
 	}
+
 	enter := func() {
 		m.ctx.LogMsg("[Main] press enter")
 	}
+
 	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		switch event.Key() {
 		case tcell.KeyUp:
@@ -279,6 +286,7 @@ func (m *MainView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 				enter()
 			case KKeyRight:
 				m.ctx.LogMsg("[Main] Move focus to Menu view")
+				m.SetSelectable(false, false)
 				m.ctx.focusEvents <- KFocusEvent{
 					kview:    MENU_VIEW,
 					setFocus: setFocus,
@@ -289,10 +297,11 @@ func (m *MainView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 		}
 	})
 }
+
 func (m *MainView) Focus(delegate func(p tview.Primitive)) {
 	m.Table.Focus(delegate)
+	m.SetSelectable(true, false)
 	m.ctx.LogMsg("[Main] Focused Main view")
-	// m.app.Draw()
 }
 
 func (m *MainView) updateSimple(data string) {
