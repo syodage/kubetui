@@ -157,7 +157,7 @@ func (m *MenuView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 			case KKeySelect:
 				enter()
 			case KKeyLeft:
-				m.ctx.logEvents <- "Menu: move focus to Main view"
+				m.ctx.LogFocusChange("Menu", "Main")
 				m.ctx.focusEvents <- KFocusEvent{
 					kview:    MAIN_VIEW,
 					setFocus: setFocus,
