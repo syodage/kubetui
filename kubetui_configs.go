@@ -6,8 +6,8 @@ package main
 type KKey rune
 
 const (
-	KKeyUp     = rune('j')
-	KKeyDown   = rune('k')
+	KKeyUp     = rune('k')
+	KKeyDown   = rune('j')
 	KKeyLeft   = rune('l')
 	KKeyRight  = rune('h')
 	KKeySelect = rune(' ')
