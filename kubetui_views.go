@@ -123,6 +123,7 @@ func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 		if m.activeIndex >= len(m.menuItems) {
 			m.activeIndex = 0
 		}
+		m.ctx.logEvents <- "Menu: move down"
 	}
 
 	moveUp := func() {
@@ -130,10 +131,12 @@ func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 		if m.activeIndex < 0 {
 			m.activeIndex = len(m.menuItems) - 1
 		}
+		m.ctx.logEvents <- "Menu: move up"
 	}
 
 	enter := func() {
 		m.selectIndex = m.activeIndex
+		m.ctx.logEvents <- "Menu: press enter"
 		// send an event to channel which update the Main view as require
 		m.ctx.stateEvents <- NewKEvent(m.menuItems[m.selectIndex].State)
 	}
@@ -157,6 +160,7 @@ func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 				// 	kview:         MAIN_VIEW,
 				// 	setFocus: setFocus,
 				// }
+				m.ctx.logEvents <- "Menu: move focus to Main view"
 			}
 		case tcell.KeyEnter:
 			enter()
@@ -296,4 +300,28 @@ func updateTable(m *Main, data string) {
 	for i, ln := range lines {
 		m.Table.SetCellSimple(i, 0, ln)
 	}
+}
+
+// ==========================Log View==============================================
+
+type LogView struct {
+	*tview.TextView
+	ctx *KContext
+	ln  int64
+}
+
+func NewLogView(ctx *KContext) *LogView {
+	tv := tview.NewTextView()
+	tv.SetTitle("Logs").SetBorder(true)
+	lv := &LogView{
+		TextView: tv,
+		ctx:      ctx,
+	}
+	lv.Log("Waiting...")
+	return lv
+}
+
+func (lv *LogView) Log(line string) {
+	lv.ln++
+	lv.SetText(fmt.Sprintf(`%d: %v`, lv.ln, line))
 }

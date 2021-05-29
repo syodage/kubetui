@@ -11,6 +11,7 @@ type Kubetui struct {
 	contextView *ContextView
 	menu        *Menu
 	mainView    *Main
+	logView     *LogView
 	// let's start with tracking latest state, maybe need to keep an stack of states
 	state   State
 	context *KContext
@@ -46,7 +47,7 @@ func NewKubetui(app *tview.Application) *Kubetui {
 	ctx := &KContext{}
 	ctx.stateEvents = make(chan KEvent, 1)
 	ctx.focusEvents = make(chan KFocusEvent, 1)
-	// ctx.logEvents = make(chan string, 1)
+	ctx.logEvents = make(chan string, 1)
 	ctx.queueUpdate = func(invoke func()) {
 		app.QueueUpdate(invoke)
 	}
@@ -62,12 +63,14 @@ func NewKubetui(app *tview.Application) *Kubetui {
 		log.Panic(err)
 	}
 	main := NewMain(ctx)
+	logView := NewLogView(ctx)
 
 	kubetui := &Kubetui{
 		app:         app,
 		contextView: context,
 		menu:        menu,
 		mainView:    main,
+		logView:     logView,
 		state:       NOOP,
 		context:     ctx,
 	}
@@ -87,8 +90,8 @@ func NewKubetui(app *tview.Application) *Kubetui {
 				case CONTEXT_VIEW:
 					fev.setFocus(context)
 				}
-				// case log := <-ctx.logEvents:
-				// 	fmt.Println(log)
+			case log := <-ctx.logEvents:
+				logView.Log(log)
 			}
 		}
 	}()
