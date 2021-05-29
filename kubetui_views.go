@@ -68,12 +68,14 @@ type MenuView struct {
 type MenuItem struct {
 	Name  string
 	State State
+	Title string
 }
 
 func newMenuItem(name string, st State) *MenuItem {
 	return &MenuItem{
 		Name:  name,
 		State: st,
+		Title: strings.Title(name),
 	}
 }
 
@@ -92,6 +94,7 @@ func NewMenuView(ctx *KContext) *MenuView {
 		ctx: ctx,
 	}
 	menu.SetSelectedStyle(ctx.lineSelectionStyle)
+	menu.SetTitle("Menu").SetBorder(true)
 	menu.updateView()
 	return menu
 }
@@ -100,15 +103,15 @@ func (m *MenuView) updateView() {
 	for row, it := range m.menuItems {
 		sel := "|"
 		if row == m.selectIndex {
-			sel = "| " // select 
+			sel = "| " // select
 		}
 
 		if row == m.activeIndex {
-			sel = "|❯ " // active 
+			sel = "|❯ " // active
 		}
 
 		resource := fmt.Sprintf(`%v %v`, sel, it.Name)
-		m.SetCellSimple(row, 0, resource)	
+		m.SetCellSimple(row, 0, resource)
 	}
 
 	m.Select(m.selectIndex, 0)
@@ -143,6 +146,7 @@ func (m *MenuView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 	enter := func() {
 		m.activeIndex = m.selectIndex
 		m.updateView()
+		m.ctx.activeMenuTitle = m.menuItems[m.activeIndex].Title
 		// FIXME: if order of following channel push change, UI get hang sometime
 		m.ctx.LogMsg("[Menu] press enter")
 		// send an event to channel which update the Main view as require
@@ -193,7 +197,8 @@ func NewMainView(ctx *KContext) *MainView {
 	// set Box properties
 	m.SetTitle("Main").
 		SetBorder(true)
-	m.updateTable(KUBETUI_BANNER)
+	ctx.activeMenuTitle = "KubeTui"
+	m.updateView(KUBETUI_BANNER)
 	m.SetSelectedStyle(ctx.lineSelectionStyle)
 	return m
 }
@@ -206,28 +211,28 @@ func (m *MainView) HandleStateChange(ev KEvent) {
 	switch ev.State {
 	case NOOP:
 		cmd = []string{"echo", "NOOOOP"}
-		update = m.updateSimple
+		update = m.updateViewSimple
 	case NAMESPACES:
 		cmd = NewKubectl().Get().Namespaces().Build()
-		update = m.updateTable
+		update = m.updateView
 	case CONTEXTS:
 		cmd = NewKubectl().Configs("get-contexts").Build()
-		update = m.updateTable
+		update = m.updateView
 	case DEPLOYMENTS:
 		cmd = NewKubectl().Get().Deployments().WithAllNamespaces().Build()
-		update = m.updateTable
+		update = m.updateView
 	case PODS:
 		cmd = NewKubectl().Get().Pods().WithAllNamespaces().Build()
-		update = m.updateTable
+		update = m.updateView
 	case NODES:
 		cmd = NewKubectl().Get().Nodes().WithAllNamespaces().Build()
-		update = m.updateTable
+		update = m.updateView
 	case SERVICES:
 		cmd = NewKubectl().Get().Services().WithAllNamespaces().Build()
-		update = m.updateTable
+		update = m.updateView
 	case ENDPOINTS:
 		cmd = NewKubectl().Get().Endpoints().WithAllNamespaces().Build()
-		update = m.updateTable
+		update = m.updateView
 	default:
 		update = func(_ string) {
 			m.Table.SetCellSimple(0, 0, "Not yet implemented")
@@ -308,11 +313,17 @@ func (m *MainView) Focus(delegate func(p tview.Primitive)) {
 	m.ctx.LogMsg("[Main] Focused Main view")
 }
 
-func (m *MainView) updateSimple(data string) {
+func (m *MainView) SetViewTitle(subTitle string) {
+	m.SetTitle(fmt.Sprintf(`Main - %v`, subTitle))
+}
+
+func (m *MainView) updateViewSimple(data string) {
+	m.SetViewTitle(m.ctx.activeMenuTitle)
 	m.Table.SetCellSimple(0, 0, data)
 }
 
-func (m *MainView) updateTable(data string) {
+func (m *MainView) updateView(data string) {
+	m.SetViewTitle(m.ctx.activeMenuTitle)
 	lines := strings.Split(data, "\n")
 	for i, ln := range lines {
 		m.Table.SetCellSimple(i, 0, ln)

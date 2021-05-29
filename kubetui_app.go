@@ -22,12 +22,13 @@ type Kubetui struct {
 
 // use to pass data to views
 type KContext struct {
-	queueUpdate     func(func())
-	queueUpdateDraw func(func())
-	stateEvents     chan KEvent
-	focusEvents     chan KFocusEvent
-	logEvents       chan string
+	queueUpdate        func(func())
+	queueUpdateDraw    func(func())
+	stateEvents        chan KEvent
+	focusEvents        chan KFocusEvent
+	logEvents          chan string
 	lineSelectionStyle tcell.Style
+	activeMenuTitle    string
 }
 
 func (ctx *KContext) LogCommand(cmds []string) {
@@ -75,13 +76,14 @@ func NewKubetui(app *tview.Application) *Kubetui {
 		Bold(true)
 
 	menuView := NewMenuView(ctx)
-	menuView.SetTitle("Menu").SetBorder(true)
 
 	infoView, err := NewInfoView(ctx)
 	if err != nil {
 		log.Panic(err)
 	}
 	mainView := NewMainView(ctx)
+	mainView.SetViewTitle(ctx.activeMenuTitle)
+
 	logView := NewLogView(ctx)
 
 	kubetui := &Kubetui{
