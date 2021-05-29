@@ -92,6 +92,14 @@ func (k *Kubectl) Build() []string {
 	return cmd
 }
 
+func (k *Kubectl) Configs(configs ...string) *Kubectl {
+	k.Command = "config"
+	if configs != nil {
+		k.Args = append(k.Args, configs...)
+	}
+	return k
+}
+
 func (k *Kubectl) Get() *Kubectl {
 	k.Command = "get"
 	return k
@@ -138,14 +146,6 @@ func (k *Kubectl) Endpoints(endpoints ...string) *Kubectl {
 	k.Args = append(k.Args, "endpoints")
 	if endpoints != nil {
 		k.Args = append(k.Args, endpoints...)
-	}
-	return k
-}
-
-func (k *Kubectl) Configs(configs ...string) *Kubectl {
-	k.Args = append(k.Args, "configs")
-	if configs != nil {
-		k.Args = append(k.Args, configs...)
 	}
 	return k
 }
