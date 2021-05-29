@@ -174,6 +174,7 @@ func (m *MenuView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 type MainView struct {
 	*tview.Table
 	ctx *KContext
+	activeRow int
 }
 
 func NewMainView(ctx *KContext) *MainView {
@@ -185,6 +186,9 @@ func NewMainView(ctx *KContext) *MainView {
 	m.SetTitle("Main").
 		SetBorder(true)
 	m.updateTable(KUBETUI_BANNER)
+	m.SetSelectable(true, false)
+	m.Select(m.activeRow, 0)
+	// m.SetFixed(1, 0)
 	return m
 }
 
@@ -240,9 +244,20 @@ func (m *MainView) HandleStateChange(ev KEvent) {
 }
 func (m *MainView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	moveUp := func() {
+		m.activeRow--
+		if m.activeRow < 0 {
+			m.activeRow = 0
+		}
+		m.Select(m.activeRow, 0)
 		m.ctx.LogMsg("[Main] move up")
 	}
 	moveDown := func() {
+		m.activeRow++
+		// TODO: why is this offset? should we strip table data?
+		if m.activeRow >= m.GetRowCount() - 1 {
+			m.activeRow = m.GetRowCount() - 2
+		}
+		m.Select(m.activeRow, 0)
 		m.ctx.LogMsg("[Main] move down")
 	}
 	enter := func() {
@@ -276,9 +291,6 @@ func (m *MainView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 }
 func (m *MainView) Focus(delegate func(p tview.Primitive)) {
 	m.Table.Focus(delegate)
-	// m.Table.Clear()
-	// m.Table.SetCellSimple(0, 0, "Focused")
-	m.Table.ScrollToBeginning()
 	m.ctx.LogMsg("[Main] Focused Main view")
 	// m.app.Draw()
 }
