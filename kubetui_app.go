@@ -9,8 +9,8 @@ import (
 type Kubetui struct {
 	app      *tview.Application
 	infoView *InfoView
-	menuView     *MenuView
-	mainView *Main
+	menuView *MenuView
+	mainView *MainView
 	logView  *LogView
 	// let's start with tracking latest state, maybe need to keep an stack of states
 	state   State
@@ -62,14 +62,14 @@ func NewKubetui(app *tview.Application) *Kubetui {
 	if err != nil {
 		log.Panic(err)
 	}
-	main := NewMain(ctx)
+	mainView := NewMainView(ctx)
 	logView := NewLogView(ctx)
 
 	kubetui := &Kubetui{
 		app:      app,
 		infoView: infoView,
-		menuView:     menuView,
-		mainView: main,
+		menuView: menuView,
+		mainView: mainView,
 		logView:  logView,
 		state:    NOOP,
 		context:  ctx,
@@ -80,11 +80,11 @@ func NewKubetui(app *tview.Application) *Kubetui {
 		for {
 			select {
 			case kev := <-ctx.stateEvents:
-				main.HandleStateChange(kev)
+				mainView.HandleStateChange(kev)
 			case fev := <-ctx.focusEvents:
 				switch fev.kview {
 				case MAIN_VIEW:
-					fev.setFocus(main)
+					fev.setFocus(mainView)
 				case MENU_VIEW:
 					fev.setFocus(menuView)
 				case INFO_VIEW:

@@ -170,26 +170,26 @@ func (m *MenuView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 
 // ==========================Main View==============================================
 
-type Main struct {
+type MainView struct {
 	*tview.Table
 	ctx *KContext
 }
 
-func NewMain(ctx *KContext) *Main {
-	m := &Main{
+func NewMainView(ctx *KContext) *MainView {
+	m := &MainView{
 		Table: tview.NewTable(),
 		ctx:   ctx,
 	}
 
 	// set Box properties
-	m.Box.SetTitle("Main").
+	m.SetTitle("Main").
 		SetBorder(true)
 	updateTable(m, KUBETUI_BANNER)
 
 	return m
 }
 
-func (m *Main) HandleStateChange(ev KEvent) {
+func (m *MainView) HandleStateChange(ev KEvent) {
 
 	update := func() {
 		m.Table.SetCellSimple(0, 0, "Default Values")
@@ -253,7 +253,7 @@ func (m *Main) HandleStateChange(ev KEvent) {
 		update()
 	})
 }
-func (m *Main) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (m *MainView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	moveUp := func() {
 		m.ctx.logEvents <- "Main: move up"
 	}
@@ -289,7 +289,7 @@ func (m *Main) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 		}
 	})
 }
-func (m *Main) Focus(delegate func(p tview.Primitive)) {
+func (m *MainView) Focus(delegate func(p tview.Primitive)) {
 	m.Table.Focus(delegate)
 	// m.Table.Clear()
 	// m.Table.SetCellSimple(0, 0, "Focused")
@@ -298,11 +298,11 @@ func (m *Main) Focus(delegate func(p tview.Primitive)) {
 	// m.app.Draw()
 }
 
-func updateSimple(m *Main, data string) {
+func updateSimple(m *MainView, data string) {
 	m.Table.SetCellSimple(0, 0, data)
 }
 
-func updateTable(m *Main, data string) {
+func updateTable(m *MainView, data string) {
 	lines := strings.Split(data, "\n")
 	for i, ln := range lines {
 		m.Table.SetCellSimple(i, 0, ln)
