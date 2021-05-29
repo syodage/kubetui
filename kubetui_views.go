@@ -278,12 +278,11 @@ func (m *Main) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 			case KKeySelect:
 				enter()
 			case KKeyRight:
-				// setFocus(m.menu)
-				// m.ctx.focusEvents <- KFocusEvent{
-				// 	kview:         MENU_VIEW,
-				// 	setFocus: setFocus,
-				// }
 				m.ctx.logEvents <- "Main: Move focus to Menu view"
+				m.ctx.focusEvents <- KFocusEvent{
+					kview:    MENU_VIEW,
+					setFocus: setFocus,
+				}
 			}
 		case tcell.KeyEnter:
 			enter()
