@@ -90,6 +90,7 @@ func NewKubetui(app *tview.Application) *Kubetui {
 				case CONTEXT_VIEW:
 					fev.setFocus(context)
 				}
+				app.Draw()
 			case log := <-ctx.logEvents:
 				logView.Log(log)
 			}
