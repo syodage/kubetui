@@ -23,16 +23,18 @@ const KUBETUI_BANNER = `
 // ==========================Context View==============================================
 type ContextView struct {
 	*tview.Table
+	ctx *KContext
 }
 
 // return a new ContextView and not-nil value if some error occurs
-func NewContextView() (ctx *ContextView, err error) {
-	ctx = &ContextView{
+func NewContextView(ctx *KContext) (ctxView *ContextView, err error) {
+	ctxView = &ContextView{
 		Table: tview.NewTable(),
+		ctx:   ctx,
 	}
 
-	t := ctx.Table
-	b := ctx.Box
+	t := ctxView.Table
+	b := ctxView.Box
 	b.SetTitle("Context").
 		SetBorder(true)
 
@@ -60,7 +62,7 @@ type Menu struct {
 	menuItems   []*MenuItem
 	activeIndex int
 	selectIndex int
-	events      chan<- KEvent
+	ctx         *KContext
 }
 
 type MenuItem struct {
@@ -75,7 +77,7 @@ func newMenuItem(name string, st State) *MenuItem {
 	}
 }
 
-func NewMenu(kev chan<- KEvent) *Menu {
+func NewMenu(ctx *KContext) *Menu {
 	menu := &Menu{
 		Box: tview.NewBox(),
 		menuItems: []*MenuItem{
@@ -87,7 +89,7 @@ func NewMenu(kev chan<- KEvent) *Menu {
 			newMenuItem("nodes", NODES),
 			newMenuItem("endpoints", ENDPOINTS),
 		},
-		events: kev,
+		ctx: ctx,
 	}
 
 	return menu
@@ -133,7 +135,7 @@ func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 	enter := func() {
 		m.selectIndex = m.activeIndex
 		// send an event to channel which update the Main view as require
-		m.events <- NewKEvent(m.menuItems[m.selectIndex].State)
+		m.ctx.stateEvents <- NewKEvent(m.menuItems[m.selectIndex].State)
 	}
 
 	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
@@ -144,12 +146,17 @@ func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 			moveDown()
 		case tcell.KeyRune:
 			switch event.Rune() {
-			case 'j':
+			case KKeyDown:
 				moveDown()
-			case 'k':
+			case KKeyUp:
 				moveUp()
-			case ' ':
+			case KKeySelect:
 				enter()
+			case KKeyLeft:
+				// m.ctx.focusEvents<- KFocusEvent{
+				// 	kview:         MAIN_VIEW,
+				// 	setFocus: setFocus,
+				// }
 			}
 		case tcell.KeyEnter:
 			enter()
@@ -161,13 +168,13 @@ func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 
 type Main struct {
 	*tview.Table
-	app *tview.Application
+	ctx *KContext
 }
 
-func NewMain(app *tview.Application) *Main {
+func NewMain(ctx *KContext) *Main {
 	m := &Main{
 		Table: tview.NewTable(),
-		app:   app,
+		ctx:   ctx,
 	}
 
 	// set Box properties
@@ -236,10 +243,48 @@ func (m *Main) HandleStateChange(ev KEvent) {
 		}
 	}
 
-	m.app.QueueUpdateDraw(func() {
+	// FIXME: menu shouldn't have full access to the app, just depend on functions
+	m.ctx.queueUpdateDraw(func() {
 		m.Table.Clear()
 		update()
 	})
+}
+func (m *Main) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+	moveUp := func() {}
+	moveDown := func() {}
+	enter := func() {}
+	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+		switch event.Key() {
+		case tcell.KeyUp:
+			moveUp()
+		case tcell.KeyDown:
+			moveDown()
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case KKeyDown:
+				moveDown()
+			case KKeyUp:
+				moveUp()
+			case KKeySelect:
+				enter()
+			case KKeyRight:
+				// setFocus(m.menu)
+				// m.ctx.focusEvents <- KFocusEvent{
+				// 	kview:         MENU_VIEW,
+				// 	setFocus: setFocus,
+				// }
+			}
+		case tcell.KeyEnter:
+			enter()
+		}
+	})
+}
+func (m *Main) Focus(delegate func(p tview.Primitive)) {
+	m.Table.Focus(delegate)
+	m.Table.Clear()
+	m.Table.SetCellSimple(0, 0, "Focused")
+	m.Table.ScrollToBeginning()
+	// m.app.Draw()
 }
 
 func updateSimple(m *Main, data string) {

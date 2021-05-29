@@ -13,6 +13,14 @@ const (
 	KKeySelect = rune(' ')
 )
 
+type KView int16
+
+const (
+	MAIN_VIEW KView = iota
+	MENU_VIEW
+	CONTEXT_VIEW
+)
+
 // This is the app main state, this will be primirally used to idetnify
 // what data should be show in the Main view.
 // Other views also can use this to update themselves
