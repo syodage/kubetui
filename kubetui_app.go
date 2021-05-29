@@ -7,11 +7,11 @@ import (
 )
 
 type Kubetui struct {
-	app         *tview.Application
-	contextView *ContextView
-	menu        *Menu
-	mainView    *Main
-	logView     *LogView
+	app      *tview.Application
+	infoView *InfoView
+	menu     *Menu
+	mainView *Main
+	logView  *LogView
 	// let's start with tracking latest state, maybe need to keep an stack of states
 	state   State
 	context *KContext
@@ -58,7 +58,7 @@ func NewKubetui(app *tview.Application) *Kubetui {
 	menu := NewMenu(ctx)
 	menu.Box.SetTitle("Menu").SetBorder(true)
 
-	context, err := NewContextView(ctx)
+	infoView, err := NewInfoView(ctx)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -66,13 +66,13 @@ func NewKubetui(app *tview.Application) *Kubetui {
 	logView := NewLogView(ctx)
 
 	kubetui := &Kubetui{
-		app:         app,
-		contextView: context,
-		menu:        menu,
-		mainView:    main,
-		logView:     logView,
-		state:       NOOP,
-		context:     ctx,
+		app:      app,
+		infoView: infoView,
+		menu:     menu,
+		mainView: main,
+		logView:  logView,
+		state:    NOOP,
+		context:  ctx,
 	}
 
 	// goroutine for kevents handling
@@ -87,8 +87,8 @@ func NewKubetui(app *tview.Application) *Kubetui {
 					fev.setFocus(main)
 				case MENU_VIEW:
 					fev.setFocus(menu)
-				case CONTEXT_VIEW:
-					fev.setFocus(context)
+				case INFO_VIEW:
+					fev.setFocus(infoView)
 				}
 				app.Draw()
 			case log := <-ctx.logEvents:

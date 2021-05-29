@@ -20,22 +20,22 @@ const KUBETUI_BANNER = `
                            v0.0.1
 `
 
-// ==========================Context View==============================================
-type ContextView struct {
+// ==========================Info View==============================================
+type InfoView struct {
 	*tview.Table
 	ctx *KContext
 }
 
-// return a new ContextView and not-nil value if some error occurs
-func NewContextView(ctx *KContext) (ctxView *ContextView, err error) {
-	ctxView = &ContextView{
+// return a new HeaderView and not-nil value if some error occurs
+func NewInfoView(ctx *KContext) (infoView *InfoView, err error) {
+	infoView = &InfoView{
 		Table: tview.NewTable(),
 		ctx:   ctx,
 	}
 
-	t := ctxView.Table
-	b := ctxView.Box
-	b.SetTitle("Context").
+	t := infoView.Table
+	b := infoView.Box
+	b.SetTitle("Info").
 		SetBorder(true)
 
 	versions := GetVersion()

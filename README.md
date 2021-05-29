@@ -39,7 +39,7 @@ brew install kubectx
 
 ## Roadmap
 
-- ContextView:
+- InfoView:
   - Show information like, active context, active namespace, resource usage, etc...
   - Show shortcuts (optional), maybe popup window to show all the valid keybinding for the active view
 - Menu:

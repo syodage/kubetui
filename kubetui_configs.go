@@ -18,7 +18,7 @@ type KView int16
 const (
 	MAIN_VIEW KView = iota
 	MENU_VIEW
-	CONTEXT_VIEW
+	INFO_VIEW
 )
 
 // This is the app main state, this will be primirally used to idetnify
