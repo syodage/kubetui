@@ -156,11 +156,11 @@ func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 			case KKeySelect:
 				enter()
 			case KKeyLeft:
-				// m.ctx.focusEvents<- KFocusEvent{
-				// 	kview:         MAIN_VIEW,
-				// 	setFocus: setFocus,
-				// }
 				m.ctx.logEvents <- "Menu: move focus to Main view"
+				m.ctx.focusEvents <- KFocusEvent{
+					kview:    MAIN_VIEW,
+					setFocus: setFocus,
+				}
 			}
 		case tcell.KeyEnter:
 			enter()
@@ -254,9 +254,15 @@ func (m *Main) HandleStateChange(ev KEvent) {
 	})
 }
 func (m *Main) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	moveUp := func() {}
-	moveDown := func() {}
-	enter := func() {}
+	moveUp := func() {
+		m.ctx.logEvents <- "Main: move up"
+	}
+	moveDown := func() {
+		m.ctx.logEvents <- "Main: move down"
+	}
+	enter := func() {
+		m.ctx.logEvents <- "Main: press enter"
+	}
 	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		switch event.Key() {
 		case tcell.KeyUp:
@@ -277,6 +283,7 @@ func (m *Main) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 				// 	kview:         MENU_VIEW,
 				// 	setFocus: setFocus,
 				// }
+				m.ctx.logEvents <- "Main: Move focus to Menu view"
 			}
 		case tcell.KeyEnter:
 			enter()
@@ -285,9 +292,10 @@ func (m *Main) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.
 }
 func (m *Main) Focus(delegate func(p tview.Primitive)) {
 	m.Table.Focus(delegate)
-	m.Table.Clear()
-	m.Table.SetCellSimple(0, 0, "Focused")
+	// m.Table.Clear()
+	// m.Table.SetCellSimple(0, 0, "Focused")
 	m.Table.ScrollToBeginning()
+	m.ctx.logEvents <- "Main: Focused Main View"
 	// m.app.Draw()
 }
 
