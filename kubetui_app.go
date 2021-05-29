@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/rivo/tview"
 )
@@ -24,6 +26,18 @@ type KContext struct {
 	stateEvents     chan KEvent
 	focusEvents     chan KFocusEvent
 	logEvents       chan string
+}
+
+func (ctx *KContext) LogCommand(cmds []string) {
+	ctx.logEvents <- fmt.Sprintf(`Exec: %v`, strings.Join(cmds, " "))
+}
+
+func (ctx *KContext) LogFocusChange(from, to string) {
+	ctx.logEvents <- fmt.Sprintf(`Focus: change %v -> %v`, from, to)
+}
+
+func (ctx *KContext) LogMsg(msg string) {
+	ctx.logEvents <- fmt.Sprintf(`Msg: %v`, msg)
 }
 
 // use to pass state change events

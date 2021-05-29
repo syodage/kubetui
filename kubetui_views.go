@@ -123,7 +123,7 @@ func (m *MenuView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 		if m.activeIndex >= len(m.menuItems) {
 			m.activeIndex = 0
 		}
-		m.ctx.logEvents <- "Menu: move down"
+		m.ctx.LogMsg("[Menu] move down")
 	}
 
 	moveUp := func() {
@@ -131,12 +131,13 @@ func (m *MenuView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 		if m.activeIndex < 0 {
 			m.activeIndex = len(m.menuItems) - 1
 		}
-		m.ctx.logEvents <- "Menu: move up"
+		m.ctx.LogMsg("[Menu] move up")
 	}
 
 	enter := func() {
 		m.selectIndex = m.activeIndex
-		m.ctx.logEvents <- "Menu: press enter"
+		// FIXME: if order of following channel push change, UI get hang sometime
+		m.ctx.LogMsg("[Menu] press enter")
 		// send an event to channel which update the Main view as require
 		m.ctx.stateEvents <- NewKEvent(m.menuItems[m.selectIndex].State)
 	}
@@ -197,25 +198,25 @@ func (m *MainView) HandleStateChange(ev KEvent) {
 		cmd = []string{"echo", "NOOOOP"}
 		update = m.updateSimple
 	case NAMESPACES:
-		cmd = []string{"kubectl", "get", "namespaces", "-A"}
+		cmd = NewKubectl().Get().Namespaces().Build()
 		update = m.updateTable
 	case CONTEXTS:
-		cmd = []string{"kubectl", "config", "get-contexts"}
+		cmd = NewKubectl().Configs("get-contexts").Build()
 		update = m.updateTable
 	case DEPLOYMENTS:
-		cmd = []string{"kubectl", "get", "deploy", "-A"}
+		cmd = NewKubectl().Get().Deployments().WithAllNamespaces().Build()
 		update = m.updateTable
 	case PODS:
-		cmd = []string{"kubectl", "get", "pods", "-A"}
+		cmd = NewKubectl().Get().Pods().WithAllNamespaces().Build()
 		update = m.updateTable
 	case NODES:
-		cmd = []string{"kubectl", "get", "nodes", "-A"}
+		cmd = NewKubectl().Get().Nodes().WithAllNamespaces().Build()
 		update = m.updateTable
 	case SERVICES:
-		cmd = []string{"kubectl", "get", "services", "-A"}
+		cmd = NewKubectl().Get().Services().WithAllNamespaces().Build()
 		update = m.updateTable
 	case ENDPOINTS:
-		cmd = []string{"kubectl", "get", "endpoints", "-A"}
+		cmd = NewKubectl().Get().Endpoints().WithAllNamespaces().Build()
 		update = m.updateTable
 	default:
 		update = func(_ string) {
@@ -229,7 +230,7 @@ func (m *MainView) HandleStateChange(ev KEvent) {
 		if cmd != nil {
 			data = executeCmd(cmd)
 		}
-
+		m.ctx.LogCommand(cmd)
 		m.ctx.queueUpdateDraw(func() {
 			m.Clear()
 			update(data)
@@ -239,13 +240,13 @@ func (m *MainView) HandleStateChange(ev KEvent) {
 }
 func (m *MainView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	moveUp := func() {
-		m.ctx.logEvents <- "Main: move up"
+		m.ctx.LogMsg("[Main] move up")
 	}
 	moveDown := func() {
-		m.ctx.logEvents <- "Main: move down"
+		m.ctx.LogMsg("[Main] move down")
 	}
 	enter := func() {
-		m.ctx.logEvents <- "Main: press enter"
+		m.ctx.LogMsg("[Main] press enter")
 	}
 	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		switch event.Key() {
@@ -262,7 +263,7 @@ func (m *MainView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 			case KKeySelect:
 				enter()
 			case KKeyRight:
-				m.ctx.logEvents <- "Main: Move focus to Menu view"
+				m.ctx.LogMsg("[Main] Move focus to Menu view")
 				m.ctx.focusEvents <- KFocusEvent{
 					kview:    MENU_VIEW,
 					setFocus: setFocus,
@@ -278,7 +279,7 @@ func (m *MainView) Focus(delegate func(p tview.Primitive)) {
 	// m.Table.Clear()
 	// m.Table.SetCellSimple(0, 0, "Focused")
 	m.Table.ScrollToBeginning()
-	m.ctx.logEvents <- "Main: Focused Main View"
+	m.ctx.LogMsg("[Main] Focused Main view")
 	// m.app.Draw()
 }
 
