@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -26,6 +27,7 @@ type KContext struct {
 	stateEvents     chan KEvent
 	focusEvents     chan KFocusEvent
 	logEvents       chan string
+	lineSelectionStyle tcell.Style
 }
 
 func (ctx *KContext) LogCommand(cmds []string) {
@@ -68,6 +70,9 @@ func NewKubetui(app *tview.Application) *Kubetui {
 	ctx.queueUpdateDraw = func(invoke func()) {
 		app.QueueUpdateDraw(invoke)
 	}
+	ctx.lineSelectionStyle = tcell.StyleDefault.
+		Foreground(tcell.ColorGreenYellow).
+		Bold(true)
 
 	menuView := NewMenuView(ctx)
 	menuView.SetTitle("Menu").SetBorder(true)
