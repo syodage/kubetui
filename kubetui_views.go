@@ -180,78 +180,62 @@ func NewMainView(ctx *KContext) *MainView {
 		Table: tview.NewTable(),
 		ctx:   ctx,
 	}
-
 	// set Box properties
 	m.SetTitle("Main").
 		SetBorder(true)
-	updateTable(m, KUBETUI_BANNER)
-
+	m.updateTable(KUBETUI_BANNER)
 	return m
 }
 
 func (m *MainView) HandleStateChange(ev KEvent) {
 
-	update := func() {
-		m.Table.SetCellSimple(0, 0, "Default Values")
-	}
+	var cmd []string
+	var update func(string)
+
 	switch ev.State {
 	case NOOP:
-		update = func() {
-			updateSimple(m, "NOOOOOOP")
-		}
+		cmd = []string{"echo", "NOOOOP"}
+		update = m.updateSimple
 	case NAMESPACES:
-		data := executeCmd([]string{
-			"kubectl", "get", "namespaces", "-A"})
-		update = func() {
-			updateTable(m, data)
-		}
+		cmd = []string{"kubectl", "get", "namespaces", "-A"}
+		update = m.updateTable
 	case CONTEXTS:
-		data := executeCmd([]string{
-			"kubectl", "config", "get-contexts"})
-		update = func() {
-			updateTable(m, data)
-		}
+		cmd = []string{"kubectl", "config", "get-contexts"}
+		update = m.updateTable
 	case DEPLOYMENTS:
-		data := executeCmd([]string{
-			"kubectl", "get", "deploy", "-A"})
-		update = func() {
-			updateTable(m, data)
-		}
+		cmd = []string{"kubectl", "get", "deploy", "-A"}
+		update = m.updateTable
 	case PODS:
-		data := executeCmd([]string{
-			"kubectl", "get", "pods", "-A"})
-		update = func() {
-			updateTable(m, data)
-		}
+		cmd = []string{"kubectl", "get", "pods", "-A"}
+		update = m.updateTable
 	case NODES:
-		data := executeCmd([]string{
-			"kubectl", "get", "nodes", "-A"})
-		update = func() {
-			updateTable(m, data)
-		}
+		cmd = []string{"kubectl", "get", "nodes", "-A"}
+		update = m.updateTable
 	case SERVICES:
-		data := executeCmd([]string{
-			"kubectl", "get", "services", "-A"})
-		update = func() {
-			updateTable(m, data)
-		}
+		cmd = []string{"kubectl", "get", "services", "-A"}
+		update = m.updateTable
 	case ENDPOINTS:
-		data := executeCmd([]string{
-			"kubectl", "get", "endpoints", "-A"})
-		update = func() {
-			updateTable(m, data)
-		}
+		cmd = []string{"kubectl", "get", "endpoints", "-A"}
+		update = m.updateTable
 	default:
-		update = func() {
+		update = func(_ string) {
 			m.Table.SetCellSimple(0, 0, "Not yet implemented")
 		}
 	}
 
-	// FIXME: menu shouldn't have full access to the app, just depend on functions
-	m.ctx.queueUpdateDraw(func() {
-		m.Table.Clear()
-		update()
-	})
+	// FIXME: can we remove this new goroutine and just execute thc content as it is in current goroutine?
+	go func(cmd []string, update func(data string)) {
+		data := ""
+		if cmd != nil {
+			data = executeCmd(cmd)
+		}
+
+		m.ctx.queueUpdateDraw(func() {
+			m.Clear()
+			update(data)
+		})
+	}(cmd, update)
+
 }
 func (m *MainView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	moveUp := func() {
@@ -298,11 +282,11 @@ func (m *MainView) Focus(delegate func(p tview.Primitive)) {
 	// m.app.Draw()
 }
 
-func updateSimple(m *MainView, data string) {
+func (m *MainView) updateSimple(data string) {
 	m.Table.SetCellSimple(0, 0, data)
 }
 
-func updateTable(m *MainView, data string) {
+func (m *MainView) updateTable(data string) {
 	lines := strings.Split(data, "\n")
 	for i, ln := range lines {
 		m.Table.SetCellSimple(i, 0, ln)
