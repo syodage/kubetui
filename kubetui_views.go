@@ -57,7 +57,7 @@ func NewInfoView(ctx *KContext) (infoView *InfoView, err error) {
 
 // ==========================Menu View==============================================
 
-type Menu struct {
+type MenuView struct {
 	*tview.Box
 	menuItems   []*MenuItem
 	activeIndex int
@@ -77,8 +77,8 @@ func newMenuItem(name string, st State) *MenuItem {
 	}
 }
 
-func NewMenu(ctx *KContext) *Menu {
-	menu := &Menu{
+func NewMenuView(ctx *KContext) *MenuView {
+	menu := &MenuView{
 		Box: tview.NewBox(),
 		menuItems: []*MenuItem{
 			newMenuItem("contexts", CONTEXTS),
@@ -95,7 +95,7 @@ func NewMenu(ctx *KContext) *Menu {
 	return menu
 }
 
-func (m *Menu) Draw(screen tcell.Screen) {
+func (m *MenuView) Draw(screen tcell.Screen) {
 	m.Box.DrawForSubclass(screen, m)
 	x, y, width, height := m.GetInnerRect()
 	for index, it := range m.menuItems {
@@ -116,7 +116,7 @@ func (m *Menu) Draw(screen tcell.Screen) {
 	}
 }
 
-func (m *Menu) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (m *MenuView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 
 	moveDown := func() {
 		m.activeIndex++

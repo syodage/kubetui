@@ -9,7 +9,7 @@ import (
 type Kubetui struct {
 	app      *tview.Application
 	infoView *InfoView
-	menu     *Menu
+	menuView     *MenuView
 	mainView *Main
 	logView  *LogView
 	// let's start with tracking latest state, maybe need to keep an stack of states
@@ -55,8 +55,8 @@ func NewKubetui(app *tview.Application) *Kubetui {
 		app.QueueUpdateDraw(invoke)
 	}
 
-	menu := NewMenu(ctx)
-	menu.Box.SetTitle("Menu").SetBorder(true)
+	menuView := NewMenuView(ctx)
+	menuView.SetTitle("Menu").SetBorder(true)
 
 	infoView, err := NewInfoView(ctx)
 	if err != nil {
@@ -68,7 +68,7 @@ func NewKubetui(app *tview.Application) *Kubetui {
 	kubetui := &Kubetui{
 		app:      app,
 		infoView: infoView,
-		menu:     menu,
+		menuView:     menuView,
 		mainView: main,
 		logView:  logView,
 		state:    NOOP,
@@ -86,7 +86,7 @@ func NewKubetui(app *tview.Application) *Kubetui {
 				case MAIN_VIEW:
 					fev.setFocus(main)
 				case MENU_VIEW:
-					fev.setFocus(menu)
+					fev.setFocus(menuView)
 				case INFO_VIEW:
 					fev.setFocus(infoView)
 				}
