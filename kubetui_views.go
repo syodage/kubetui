@@ -183,10 +183,20 @@ func (m *MenuView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 
 // ==========================Main View==============================================
 
+type ViewUpdate struct {
+	SubTitle   string
+	Command    []string
+	HasHeader  bool
+	ToCells    func(data string) [][]string
+	Update     func(data [][]string)
+	ActionFunc func(row, col int, text string)
+}
+
 type MainView struct {
 	*tview.Table
-	ctx       *KContext
-	activeRow int
+	ctx        *KContext
+	activeRow  int
+	actionFunc func(row, col int, text string)
 }
 
 func NewMainView(ctx *KContext) *MainView {
@@ -198,60 +208,51 @@ func NewMainView(ctx *KContext) *MainView {
 	m.SetTitle("Main").
 		SetBorder(true)
 	ctx.activeMenuTitle = "KubeTui"
-	m.updateView(KUBETUI_BANNER)
+	// m.updateView(KUBETUI_BANNER)
 	m.SetSelectedStyle(ctx.lineSelectionStyle)
 	return m
 }
 
 func (m *MainView) HandleStateChange(ev KEvent) {
 
-	var cmd []string
-	var update func(string)
+	vu := &ViewUpdate{}
 
-	switch ev.State {
-	case NOOP:
-		cmd = []string{"echo", "NOOOOP"}
-		update = m.updateViewSimple
-	case NAMESPACES:
-		cmd = NewKubectl().Get().Namespaces().Build()
-		update = m.updateView
-	case CONTEXTS:
-		cmd = NewKubectl().Configs("get-contexts").Build()
-		update = m.updateView
-	case DEPLOYMENTS:
-		cmd = NewKubectl().Get().Deployments().WithAllNamespaces().Build()
-		update = m.updateView
-	case PODS:
-		cmd = NewKubectl().Get().Pods().WithAllNamespaces().Build()
-		update = m.updateView
-	case NODES:
-		cmd = NewKubectl().Get().Nodes().WithAllNamespaces().Build()
-		update = m.updateView
-	case SERVICES:
-		cmd = NewKubectl().Get().Services().WithAllNamespaces().Build()
-		update = m.updateView
-	case ENDPOINTS:
-		cmd = NewKubectl().Get().Endpoints().WithAllNamespaces().Build()
-		update = m.updateView
-	default:
-		update = func(_ string) {
-			m.Table.SetCellSimple(0, 0, "Not yet implemented")
+	vu.SubTitle = m.ctx.activeMenuTitle
+	vu.HasHeader = true
+	vu.ToCells = FormatData
+	vu.Update = func(data [][]string) {
+		for r, cells := range data {
+			for c, cell := range cells {
+				m.Table.SetCellSimple(r, c, cell)
+			}
 		}
 	}
 
-	// FIXME: can we remove this new goroutine and just execute thc content as it is in current goroutine?
-	go func(cmd []string, update func(data string)) {
-		data := ""
-		if cmd != nil {
-			data = executeCmd(cmd)
-		}
-		m.ctx.LogCommand(cmd)
-		m.ctx.queueUpdateDraw(func() {
-			m.Clear()
-			update(data)
-		})
-	}(cmd, update)
+	vu.ActionFunc = func(r, c int, txt string) {
+		m.ctx.LogMsg(fmt.Sprintf(`{row:%d, col:%d, text:%v}`, r, c, txt))
+	}
 
+	switch ev.State {
+	case NAMESPACES:
+		vu.Command = NewKubectl().Get().Namespaces().Build()
+	case CONTEXTS:
+		vu.Command = NewKubectl().Configs("get-contexts").Build()
+	case DEPLOYMENTS:
+		vu.Command = NewKubectl().Get().Deployments().WithAllNamespaces().Build()
+	case PODS:
+		vu.Command = NewKubectl().Get().Pods().WithAllNamespaces().Build()
+	case NODES:
+		vu.Command = NewKubectl().Get().Nodes().WithAllNamespaces().Build()
+	case SERVICES:
+		vu.Command = NewKubectl().Get().Services().WithAllNamespaces().Build()
+	case ENDPOINTS:
+		vu.Command = NewKubectl().Get().Endpoints().WithAllNamespaces().Build()
+	default:
+		vu.Command = []string{"echo", "Not yet implemented"}
+	}
+
+	// update the view data
+	m.update(vu)
 }
 
 // Main view key-bindings
@@ -277,6 +278,10 @@ func (m *MainView) InputHandler() func(event *tcell.EventKey, setFocus func(p tv
 
 	enter := func() {
 		m.ctx.LogMsg("[Main] press enter")
+		if m.actionFunc != nil {
+			data := m.GetCell(m.activeRow, 0).Text
+			m.actionFunc(m.activeRow, 0, data)
+		}
 	}
 
 	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
@@ -317,17 +322,22 @@ func (m *MainView) SetViewTitle(subTitle string) {
 	m.SetTitle(fmt.Sprintf(`Main - %v`, subTitle))
 }
 
-func (m *MainView) updateViewSimple(data string) {
-	m.SetViewTitle(m.ctx.activeMenuTitle)
-	m.Table.SetCellSimple(0, 0, data)
-}
-
-func (m *MainView) updateView(data string) {
-	m.SetViewTitle(m.ctx.activeMenuTitle)
-	lines := strings.Split(data, "\n")
-	for i, ln := range lines {
-		m.Table.SetCellSimple(i, 0, ln)
+// Here we update the data in the view and redraw UI
+func (m *MainView) update(vu *ViewUpdate) {
+	if vu.Command == nil {
+		panic("Invalid command")
 	}
+	if vu.SubTitle != "" {
+		m.SetViewTitle(vu.SubTitle)
+	}
+
+	m.actionFunc = vu.ActionFunc
+	data := executeCmd(vu.Command)
+	m.ctx.LogCommand(vu.Command)
+	m.ctx.queueUpdateDraw(func() {
+		m.Clear()
+		vu.Update(vu.ToCells(data))
+	})
 }
 
 // ==========================Log View==============================================
